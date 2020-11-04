@@ -3,6 +3,7 @@ package svm;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +14,7 @@ import libsvm.svm_parameter;
 import libsvm.svm_problem;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         // 定义训练集点a{10.0, 10.0} 和 点b{-10.0, -10.0}，对应lable为{1.0, -1.0}
         List<Double> label = new ArrayList<Double>();
         List<svm_node[]> nodeSet = new ArrayList<svm_node[]>();
@@ -49,7 +50,8 @@ public class Main {
         // 如果参数没有问题，则svm.svm_check_parameter()函数返回null,否则返回error描述。
         svm_model model = svm.svm_train(problem, param);
         // svm.svm_train()训练出SVM分类模型
-
+        svm.svm_save_model("file/svm1.model", model);
+//        svm_model model = svm.svm_load_model("file/svm1.model");
         // 获取测试数据
         List<Double> testlabel = new ArrayList<Double>();
         List<svm_node[]> testnodeSet = new ArrayList<svm_node[]>();
@@ -76,6 +78,33 @@ public class Main {
             err += Math.abs(predictValue - truevalue);
         }
         System.out.println("err=" + err / datas.length);
+    }
+
+    public static void getSolarData(List<svm_node[]> nodeSet, List<Double> label,
+                               String filename) {
+        try {
+
+            FileReader fr = new FileReader(new File(filename));
+            BufferedReader br = new BufferedReader(fr);
+            String line = null;
+            br.readLine();
+            while ((line = br.readLine()) != null) {
+                String[] datas = line.split(",");
+                svm_node[] vector = new svm_node[datas.length - 1];
+                for (int i = 0; i < datas.length - 1; i++) {
+                    svm_node node = new svm_node();
+                    node.index = i + 1;
+                    node.value = Double.parseDouble(datas[i]);
+                    vector[i] = node;
+                }
+                nodeSet.add(vector);
+                double lablevalue = Double.parseDouble(datas[datas.length - 1]);
+                label.add(lablevalue);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     public static void getData(List<svm_node[]> nodeSet, List<Double> label,
