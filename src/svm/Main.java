@@ -46,11 +46,11 @@ public class Main {
         // 定义svm_parameter对象
         svm_parameter param = new svm_parameter();
         param.svm_type = svm_parameter.EPSILON_SVR;
-        param.kernel_type = svm_parameter.LINEAR;
-        param.cache_size = 200;
-
-        param.eps = 0.1;
-        param.C = 1;
+        param.kernel_type = svm_parameter.RBF;
+        param.cache_size = 1000;
+        param.gamma = 0.2;	// 1/num_features
+        param.eps = 1e-2;
+        param.C = 10;
         // 训练SVM分类模型
         System.out.println(svm.svm_check_parameter(problem, param));
         // 如果参数没有问题，则svm.svm_check_parameter()函数返回null,否则返回error描述。
