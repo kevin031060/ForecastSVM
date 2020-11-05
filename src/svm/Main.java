@@ -18,7 +18,7 @@ public class Main {
         // 定义训练集点a{10.0, 10.0} 和 点b{-10.0, -10.0}，对应lable为{1.0, -1.0}
         List<Double> label = new ArrayList<Double>();
         List<svm_node[]> nodeSet = new ArrayList<svm_node[]>();
-        getData(nodeSet, label, "file/train.txt");
+        getSolarData(nodeSet, label, "file/solar.csv");
 
         int dataRange=nodeSet.get(0).length;
         svm_node[][] datas = new svm_node[nodeSet.size()][dataRange]; // 训练集的向量表
@@ -31,7 +31,12 @@ public class Main {
         for (int i = 0; i < lables.length; i++) {
             lables[i] = label.get(i);
         }
-
+        for (int j = 0; j < dataRange; j++) {
+            System.out.print(nodeSet.get(1000)[j].value);
+            System.out.print("|");
+        }
+        System.out.println(" ");
+        System.out.println(label.get(1000));
         // 定义svm_problem对象
         svm_problem problem = new svm_problem();
         problem.l = nodeSet.size(); // 向量个数
@@ -42,9 +47,10 @@ public class Main {
         svm_parameter param = new svm_parameter();
         param.svm_type = svm_parameter.EPSILON_SVR;
         param.kernel_type = svm_parameter.LINEAR;
-        param.cache_size = 1000;
-        param.eps = 0.00001;
-        param.C = 1.9;
+        param.cache_size = 200;
+
+        param.eps = 0.1;
+        param.C = 1;
         // 训练SVM分类模型
         System.out.println(svm.svm_check_parameter(problem, param));
         // 如果参数没有问题，则svm.svm_check_parameter()函数返回null,否则返回error描述。
@@ -55,7 +61,7 @@ public class Main {
         // 获取测试数据
         List<Double> testlabel = new ArrayList<Double>();
         List<svm_node[]> testnodeSet = new ArrayList<svm_node[]>();
-        getData(testnodeSet, testlabel, "file/test.txt");
+        getSolarData(testnodeSet, testlabel, "file/solar_test.csv");
 
         svm_node[][] testdatas = new svm_node[testnodeSet.size()][dataRange]; // 训练集的向量表
         for (int i = 0; i < testdatas.length; i++) {
@@ -68,37 +74,59 @@ public class Main {
             testlables[i] = testlabel.get(i);
         }
 
+        double[] prediction =  new double[testlabel.size()];
         // 预测测试数据的lable
         double err = 0.0;
         for (int i = 0; i < testdatas.length; i++) {
             double truevalue = testlables[i];
             System.out.print(truevalue + " ");
             double predictValue = svm.svm_predict(model, testdatas[i]);
+            prediction[i] = predictValue;
             System.out.println(predictValue);
             err += Math.abs(predictValue - truevalue);
         }
         System.out.println("err=" + err / datas.length);
+        //
+        plot_utils.plot(prediction, testlables, 200);
     }
 
     public static void getSolarData(List<svm_node[]> nodeSet, List<Double> label,
-                               String filename) {
+                                    String filename) {
         try {
 
             FileReader fr = new FileReader(new File(filename));
             BufferedReader br = new BufferedReader(fr);
+            //  读取第一行，列名
             String line = null;
-            br.readLine();
-            while ((line = br.readLine()) != null) {
+            line = br.readLine();
+            String[] col_names = line.split(",");
+            int col_nums = col_names.length;
+            int row_nums = 0;
+            int max_row_nums = 3000;
+            //  强制只读取1000个数据
+            double[][] data = new double[max_row_nums][col_nums];
+            //            读取数据存放到矩阵中
+            while ((line = br.readLine()) != null && row_nums < max_row_nums) {
+
                 String[] datas = line.split(",");
-                svm_node[] vector = new svm_node[datas.length - 1];
-                for (int i = 0; i < datas.length - 1; i++) {
+                for (int i = 0; i < datas.length; i++) {
+                    data[row_nums][i] = Double.parseDouble(datas[i]);
+                }
+                row_nums = row_nums + 1;
+            }
+            // 归一化
+            data = scaler.normalize4Scale(data);
+            // 转换为svm模型的数据格式
+            for (int i = 0; i < row_nums; i++) {
+                svm_node[] vector = new svm_node[col_nums - 1];
+                for (int j = 0; j < col_nums - 1; j++) {
                     svm_node node = new svm_node();
-                    node.index = i + 1;
-                    node.value = Double.parseDouble(datas[i]);
-                    vector[i] = node;
+                    node.index = j + 1;
+                    node.value = data[i][j];
+                    vector[j] = node;
                 }
                 nodeSet.add(vector);
-                double lablevalue = Double.parseDouble(datas[datas.length - 1]);
+                double lablevalue = data[i][col_nums - 1];
                 label.add(lablevalue);
             }
         } catch (Exception e) {
@@ -107,29 +135,4 @@ public class Main {
 
     }
 
-    public static void getData(List<svm_node[]> nodeSet, List<Double> label,
-                               String filename) {
-        try {
-
-            FileReader fr = new FileReader(new File(filename));
-            BufferedReader br = new BufferedReader(fr);
-            String line = null;
-            while ((line = br.readLine()) != null) {
-                String[] datas = line.split(",");
-                svm_node[] vector = new svm_node[datas.length - 1];
-                for (int i = 0; i < datas.length - 1; i++) {
-                    svm_node node = new svm_node();
-                    node.index = i + 1;
-                    node.value = Double.parseDouble(datas[i]);
-                    vector[i] = node;
-                }
-                nodeSet.add(vector);
-                double lablevalue = Double.parseDouble(datas[datas.length - 1]);
-                label.add(lablevalue);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
 }
