@@ -13,8 +13,8 @@ public class scaler {
         }
         double[][] p = new double[points.length][points[0].length];
         double[] matrixJ;
-        double maxV;
-        double minV;
+        double maxV=0;
+        double minV=0;
         for (int j = 0; j < points[0].length; j++) {
             matrixJ = getMatrixCol(points, j);
             maxV = maxV(matrixJ);
@@ -23,6 +23,8 @@ public class scaler {
                 p[i][j] = maxV == minV ? minV : (points[i][j] - minV) / (maxV - minV);
             }
         }
+        System.out.print("Scaler: ");
+        System.out.println(maxV- minV);
         return p;
     }
 
